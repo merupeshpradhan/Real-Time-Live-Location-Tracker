@@ -33,7 +33,7 @@
 
         socket.on('server:location:updates', (data) => {
             const { id, latitude, longitude } = data;
-            if (id === userId) return; // Don't draw yourself twice
+            if (id === userId) return; // Don't draw mySefl twice
 
             if (!remoteMarkers.has(id)) {
                 const marker = L.marker([latitude, longitude]).addTo(map).bindPopup(id);

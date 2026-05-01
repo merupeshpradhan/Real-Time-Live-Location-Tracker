@@ -9,7 +9,6 @@ async function init() {
     eachMessage: async ({ message }) => {
       const data = JSON.parse(message.value.toString());
       // REQUIREMENT: Simulate storage
-      // console.log(`[DB LOG]: Saving location for ${data.id} at ${data.ts}`);
       console.log(`[DB LOG]: User ${data.id} is at Lat: ${data.latitude}, Lng: ${data.longitude}`);
     },
   });

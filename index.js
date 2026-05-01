@@ -62,9 +62,17 @@ async function main() {
   });
 
   app.use(express.static(path.resolve("./public")));
-  server.listen(PORT, () =>
-    console.log(`Server running on http://localhost:${PORT}`),
-  );
+
+  // server.listen(PORT, () =>
+  //   console.log(`Server running on http://localhost:${PORT}`),
+  // );
+
+  // This change allows my phone (192.168.1.7) to talk to my laptop!
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running!`);
+    console.log(`💻 Local: http://localhost:${PORT}`);
+    console.log(`📱 Mobile: http://192.168.1.7:${PORT}`);
+  });
 }
 
 main().catch(console.error);
