@@ -26,69 +26,85 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const userId = prompt("Enter your Name/ID to start tracking") || "Anonymous";
-        const socket = io({ query: { userId } });
-        const map = L.map('map').setView([0, 0], 2);
-        const remoteMarkers = new Map();
+        async function startApp() {
+            // 1. Get Username and Login to get the Token (REQUIRED: Auth flow)
+            const username = prompt("Enter your Name/ID to start tracking") || `User_${Math.floor(Math.random() * 1000)}`;
 
-        socket.on('server:location:updates', (data) => {
-            const { id, latitude, longitude } = data;
-            if (id === userId) return; // Don't draw mySefl twice
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            });
+            const { token } = await response.json();
 
-            if (!remoteMarkers.has(id)) {
-                const marker = L.marker([latitude, longitude]).addTo(map).bindPopup(id);
-                remoteMarkers.set(id, marker);
-            } else {
-                // FIX: This updates the UI position
-                remoteMarkers.get(id).setLatLng([latitude, longitude]);
-            }
-        });
+            // 2. Connect to Socket using the Token
+            const socket = io({
+                auth: { token } // REQUIRED: Sends the JWT to the server
+            });
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
+            const userId = username;
+            const map = L.map('map').setView([0, 0], 2);
+            const remoteMarkers = new Map();
 
-        function getUsersCurrentLocation() {
-            return new Promise((res, rej) => {
-                if ("geolocation" in navigator) {
+            // Remove stale markers
+            socket.on('server:user:left', (data) => {
+                const { id } = data;
+                if (remoteMarkers.has(id)) {
+                    map.removeLayer(remoteMarkers.get(id));
+                    remoteMarkers.delete(id);
+                }
+            });
+
+            // Update other users
+            socket.on('server:location:updates', (data) => {
+                const { id, latitude, longitude } = data;
+                if (id === userId) return;
+
+                if (!remoteMarkers.has(id)) {
+                    const marker = L.marker([latitude, longitude]).addTo(map).bindPopup(id);
+                    remoteMarkers.set(id, marker);
+                } else {
+                    remoteMarkers.get(id).setLatLng([latitude, longitude]);
+                }
+            });
+
+            // Fixed TileLayer URL
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            function getUsersCurrentLocation() {
+                return new Promise((res, rej) => {
                     navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            console.log(`Got user's Location`, position);
-                            const latitude = position.coords.latitude;
-                            const longitude = position.coords.longitude;
-                            res({ latitude, longitude })
-                        },
-                        (err) => {
-                            rej(err)
-                        },
-                        { enableHighAccuracy: true }
-                    )
-                } else {
-                    alert('Geolocation is not available in this browser')
-                }
-            })
+                        (pos) => res({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+                        (err) => rej(err),
+                        { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                });
+            }
 
-        }
-
-        let myCurrentLocationMarker = null
-
-        async function main() {
+            let myMarker = null;
             setInterval(async () => {
-                const { latitude, longitude } = await getUsersCurrentLocation()
-                socket.emit('client:location:update', { latitude, longitude })
-                if (!myCurrentLocationMarker) {
-                    myCurrentLocationMarker = L.marker([latitude, longitude])
-                        .addTo(map)
-                        .bindPopup('You are here')
-                } else {
-                    myCurrentLocationMarker.setLatLng([latitude, longitude])
-                }
-            }, 10 * 1000)
+                try {
+                    const { latitude, longitude } = await getUsersCurrentLocation();
 
+                    // Send update (Server will validate these are numbers)
+                    socket.emit('client:location:update', { latitude, longitude });
+
+                    if (!myMarker) {
+                        myMarker = L.marker([latitude, longitude]).addTo(map).bindPopup('You (Live)');
+                        map.setView([latitude, longitude], 13);
+                    } else {
+                        myMarker.setLatLng([latitude, longitude]);
+                    }
+                } catch (err) {
+                    console.error("Location error:", err);
+                }
+            }, 5000);
         }
 
-        window.addEventListener('load', main)
+        window.addEventListener('load', startApp);
     </script>
 </body>
 
