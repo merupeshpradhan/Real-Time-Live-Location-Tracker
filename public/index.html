@@ -28,7 +28,7 @@
     <script>
         async function startApp() {
             // 1. Get Username and Login to get the Token (REQUIRED: Auth flow)
-            const username = prompt("Enter your Name/ID to start tracking") || `User_${Math.floor(Math.random() * 1000)}`;
+            const username = prompt("Enter your Name to start tracking") || `User_${Math.floor(Math.random() * 1000)}`;
 
             const response = await fetch('/login', {
                 method: 'POST',
