@@ -27,7 +27,7 @@ A real-time tracking system using Node.js, Socket.io, and Apache Kafka. Users au
 
 ## Demo Video
 - **Live Link:** https://locationtracker.rupeshpradhan.com/
-- **YouTube Demo:** [My yt Link]
+- **Project Demo Video:** https://youtu.be/zopYxeOqqtw?si=PJxnRH_Mhn6lk-Fc
 
 ## Assumptions & Limitations
 - **OIDC**: Simulated using a custom JWT login flow for local development.
