@@ -26,7 +26,8 @@ A real-time tracking system using Node.js, Socket.io, and Apache Kafka. Users au
 5. **Consume (Storage)**: `database-processor.js` consumes same Kafka message -> Appends to `location_history.log`.
 
 ## Demo Video
-[My YouTube Video]
+- **Live Link:** https://locationtracker.rupeshpradhan.com/
+- **YouTube Demo:** [My yt Link]
 
 ## Assumptions & Limitations
 - **OIDC**: Simulated using a custom JWT login flow for local development.
